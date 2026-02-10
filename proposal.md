@@ -1,8 +1,8 @@
 # Rule-based Escrow Agent for Bounty & Service Payments on Solana
 
 ## Project Repository
-TODO  
-(e.g. https://github.com/yourname/solana-agent-escrow)
+https://github.com/AndandoJing/solana-bounty-agent
+
 
 ---
 

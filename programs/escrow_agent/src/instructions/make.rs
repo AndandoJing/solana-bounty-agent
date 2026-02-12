@@ -1,6 +1,5 @@
 use anchor_lang::prelude::*; 
 use anchor_spl::{ // 引入 Anchor SPL 辅助与 Token 接口。
-    associated_token::AssociatedToken, // 关联代币程序类型。
     token_interface::{ // Token 接口模块，兼容 SPL Token / Token-2022。
         transfer_checked, Mint, TokenAccount, TokenInterface, TransferChecked, // CPI 方法与账户类型。
     }, // token_interface 导入结束。
@@ -43,26 +42,41 @@ pub struct Make<'info> { // Make 账户结构体开始。
     #[account( // escrow 的金库 ATA。
         init, // 创建金库 ATA。
         payer = maker, // maker 支付金库租金。
-        associated_token::mint = mint_a, // 金库 ATA 对应 mint A。
-        associated_token::authority = escrow, // 金库权限为 escrow PDA。
-        associated_token::token_program = token_program // 金库使用指定 token_program。
+        token::mint = mint_a, // 金库 ATA 对应 mint A。
+        token::authority = escrow, // 金库权限为 escrow PDA。
+        token::token_program = token_program // 金库使用指定 token_program。
     )] // 金库 ATA 约束结束。
     pub vault: InterfaceAccount<'info, TokenAccount>, // 存放 Token A 的金库账户。
     // 程序账户。
-    pub associated_token_program: Program<'info, AssociatedToken>, // 关联代币程序。
     pub token_program: Interface<'info, TokenInterface>, // Token 程序接口。
     pub system_program: Program<'info, System>, // 系统程序。
+    pub rent: Sysvar<'info, Rent>,
 } 
 // Make 辅助方法实现。
 impl<'info> Make<'info> { // Make 的 impl 开始。
-    pub fn populate_escrow(&mut self, seed: u64, receive: u64, bump: u8) -> Result<()> { // 填充 escrow 字段。
-        self.escrow.seed = seed; // 保存 seed 用于后续 PDA 推导。
-        self.escrow.maker = self.maker.key(); // 保存 maker 公钥。
-        self.escrow.mint_a = self.mint_a.key(); // 保存 mint A 公钥。
-        self.escrow.mint_b = self.mint_b.key(); // 保存 mint B 公钥。
-        self.escrow.receive = receive; // 保存期望接收的 Token B 数量。
-        self.escrow.bump = bump; // 保存 PDA bump。
-        Ok(()) 
+	pub fn populate_escrow(
+    		&mut self,
+    		seed: u64,
+    		receive: u64,
+    		deposit: u64,
+    	deadline: i64,
+    	bump: u8,
+	) -> Result<()> {
+    		self.escrow.seed = seed;
+    		self.escrow.maker = self.maker.key();
+    		self.escrow.mint_a = self.mint_a.key();
+    		self.escrow.mint_b = self.mint_b.key();
+    		self.escrow.receive = receive;
+
+    // Agent fields
+    		self.escrow.deposit = deposit;
+    		self.escrow.buyer_confirmed = false;
+    		self.escrow.deadline = deadline;
+    		self.escrow.executed = false;
+
+    		self.escrow.bump = bump;
+    		Ok(())
+
     } // populate_escrow 结束。
     // 将 maker 的 Token A 存入金库。
     pub fn deposit_tokens(&mut self, amount: u64) -> Result<()> { // 转账 Token A 到金库。
@@ -83,13 +97,21 @@ impl<'info> Make<'info> { // Make 的 impl 开始。
     } 
 } 
 // make 指令处理器。 
-pub fn handler(ctx: Context<Make>, seed: u64, receive: u64, amount: u64) -> Result<()> { // make 入口逻辑。
-    // 校验数量参数。 // 校验说明。
-    require_gt!(receive, 0, EscrowError::InvalidAmount); // receive 必须大于 0。
-    require_gt!(amount, 0, EscrowError::InvalidAmount); // deposit 必须大于 0。
-    // 写入 Escrow 数据。 // 状态初始化说明。
-    ctx.accounts.populate_escrow(seed, receive, ctx.bumps.escrow)?; // 持久化 escrow 字段。
-    // 存入 Token。 // 转账说明。
-    ctx.accounts.deposit_tokens(amount)?; // 将 maker 的 Token A 存入金库。
-    Ok(()) // 返回成功。
-} 
+pub fn handler(
+    ctx: Context<Make>,
+    seed: u64,
+    deposit: u64,
+    receive: u64,
+    deadline: i64,
+) -> Result<()> {
+    msg!("make params: seed={} deposit={} receive={} deadline={}", seed, deposit, receive, deadline);
+
+    require_gt!(receive, 0, EscrowError::InvalidAmount);
+    require_gt!(deposit, 0, EscrowError::InvalidAmount);
+
+    ctx.accounts
+        .populate_escrow(seed, receive, deposit, deadline, ctx.bumps.escrow)?;
+
+    ctx.accounts.deposit_tokens(deposit)?;
+    Ok(())
+}

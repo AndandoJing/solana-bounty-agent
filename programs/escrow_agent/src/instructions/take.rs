@@ -33,9 +33,9 @@ pub struct Take<'info> {
   pub mint_b: Box<InterfaceAccount<'info, Mint>>, // mint B 账户。
   #[account( // 金库 ATA（escrow 持有的 Token A）。
       mut, // 金库将被扣款并关闭。
-      associated_token::mint = mint_a, // 金库 mint 必须为 mint A。
-      associated_token::authority = escrow, // 金库权限为 escrow PDA。
-      associated_token::token_program = token_program // 金库使用指定 token_program。
+      token::mint = mint_a, // 金库 mint 必须为 mint A。
+      token::authority = escrow, // 金库权限为 escrow PDA。
+      token::token_program = token_program // 金库使用指定 token_program。
   )] // 金库约束结束。
   pub vault: Box<InterfaceAccount<'info, TokenAccount>>, // 金库存放 Token A。
   #[account( // taker 的 ATA（mint A）。

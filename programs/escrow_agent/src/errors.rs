@@ -10,4 +10,8 @@ pub enum EscrowError { // 托管相关错误枚举开始。
     InvalidMintA, // mint A 与 escrow 配置不一致。
     #[msg("Invalid mint b")] // 当 mint B 不匹配时的错误消息。
     InvalidMintB, // mint B 与 escrow 配置不一致。
+    #[msg("Escrow already executed")]
+    AlreadyExecuted,
+    #[msg("Conditions not met yet")]
+    NotReady,
 } 

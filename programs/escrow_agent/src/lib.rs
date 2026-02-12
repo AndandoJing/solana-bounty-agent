@@ -8,13 +8,20 @@ use instructions::*; // 使用重新导出的指令账户类型。
 declare_id!("5aPNa66dTAXKUYozWKNRgm2jfnEg1HUtXzT22f5Q6zZ4"); 
 // 程序入口模块。 
 #[program] // Anchor 程序宏，生成入口函数。
-pub mod anchor_escrow { // 程序模块名。
+pub mod blueshift_anchor_escrow { // 程序模块名。
     use super::*; // 将外层作用域内容引入当前模块。
     // 指令：make（鉴别器 = 0）。
     #[instruction(discriminator = 0)] // make 指令自定义鉴别器。
-    pub fn make(ctx: Context<Make>, seed: u64, deposit: u64, receive: u64) -> Result<()> { // make 入口函数。
-        instructions::make::handler(ctx, seed, deposit, receive) // 调用 make 处理器。
-    } 
+    pub fn make(
+        ctx: Context<Make>,
+        seed: u64,
+        deposit: u64,
+        receive: u64,
+        deadline: i64,
+        ) -> Result<()> {
+        instructions::make::handler(ctx, seed, deposit, receive, deadline)
+    }
+
     // 指令：take（鉴别器 = 1）。 
     #[instruction(discriminator = 1)] 
     pub fn take(ctx: Context<Take>) -> Result<()> { // take 入口函数。
@@ -24,5 +31,14 @@ pub mod anchor_escrow { // 程序模块名。
     #[instruction(discriminator = 2)] // refund 指令自定义鉴别器。
     pub fn refund(ctx: Context<Refund>) -> Result<()> { // refund 入口函数。
         instructions::refund::handler(ctx) // 调用 refund 处理器。
-    } 
-} 
+    }
+    #[instruction(discriminator = 3)]
+    pub fn confirm_delivery(ctx: Context<ConfirmDelivery>) -> Result<()> {
+        instructions::confirm_delivery::handler(ctx)
+    }
+
+    #[instruction(discriminator = 4)]
+    pub fn check_and_execute(ctx: Context<CheckAndExecute>) -> Result<()> {
+        instructions::check_and_execute::handler(ctx)
+    }
+}

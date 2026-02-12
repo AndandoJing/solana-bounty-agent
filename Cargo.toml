@@ -1,0 +1,11 @@
+[workspace]
+members = ["programs/*"]
+resolver = "2"
+
+[patch.crates-io]
+# Solana SBF toolchain uses an older Cargo; blake3 1.8.3 uses Rust 2024 edition.
+# Patch blake3 to a git tag that still works with the older toolchain.
+blake3 = { git = "https://github.com/BLAKE3-team/BLAKE3", tag = "1.8.2", package = "blake3" }
+
+[profile.release]
+overflow-checks = true

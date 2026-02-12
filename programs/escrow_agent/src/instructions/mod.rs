@@ -5,3 +5,9 @@ pub mod refund; // 暴露 refund 指令模块。
 pub use make::*; // 重新导出 make 模块内容。
 pub use take::*; // 重新导出 take 模块内容。
 pub use refund::*; // 重新导出 refund 模块内容。
+
+pub mod confirm_delivery;
+pub mod check_and_execute;
+
+pub use confirm_delivery::*;
+pub use check_and_execute::*;
